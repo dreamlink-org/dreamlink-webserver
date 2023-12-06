@@ -1,0 +1,10 @@
+.env
+.envrc
+
+.venv/
+__pycache__/
+.db
+
+data/
+staging/
+store/
