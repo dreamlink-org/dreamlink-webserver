@@ -1,5 +1,4 @@
 from datetime import datetime
-from asyncio import run
 from dreamlink.lib.db import get_connection
 
 from dreamlink.migration import (
@@ -48,4 +47,4 @@ def migrate():
                 """)
 
 if __name__ == "__main__":
-    run(migrate())
+    migrate()

@@ -1,4 +1,3 @@
-from asyncio import run
 from dreamlink.lib.db import get_connection
 
 def purge():
@@ -9,4 +8,4 @@ def purge():
         conn.execute("GRANT ALL ON SCHEMA public TO public")
 
 if __name__ == "__main__":
-    run(purge())
+    purge()

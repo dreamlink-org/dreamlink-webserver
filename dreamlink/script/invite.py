@@ -1,6 +1,5 @@
-from dreamlink.lib.db import get_connection, execute
+from dreamlink.lib.db import get_connection
 from argparse import ArgumentParser
-from asyncio import run
 from datetime import datetime, timedelta, timezone
 from secrets import token_hex
 
@@ -30,4 +29,4 @@ def generate_invite_code(num_hours):
 
 if __name__ == "__main__":
     args = parser.parse_args()
-    run(generate_invite_code(args.expiry))
+    generate_invite_code(args.expiry)

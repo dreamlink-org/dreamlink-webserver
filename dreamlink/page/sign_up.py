@@ -83,10 +83,12 @@ def post_signup():
         else:
             invite_id = None
 
-        handle, conn.fetch_one(lambda col: f"""
-            SELECT 1 FROM "user" WHERE "handle" = {col(handle)}
+        handle_exists, = conn.fetch_one(lambda col: f"""
+            SELECT EXISTS (
+                SELECT 1 FROM "user" WHERE "handle" = {col(handle)}
+            )
         """) or (None,)
-        if handle is not None:
+        if handle_exists:
             err_msg = "User handle already taken"
             return _get_signup(error = err_msg)
         
@@ -103,14 +105,14 @@ def post_signup():
                 ) VALUES (
                     {col(handle)}, 
                     {col(hash)},
-                    {col(token_hex(8).upper())},
+                    {col(token_hex(8))},
                     {col(token_hex(8))},
                     {col(now_utc)}
                 ) RETURNING id, jwt_code
             """)
 
         resp = redirect("/dashboard")
-        resp.add_cookie(
+        resp.set_cookie(
             "jwt", 
             create_jwt(user_id, jwt_code = jwt_code),
             domain = furl(request.url).host,
