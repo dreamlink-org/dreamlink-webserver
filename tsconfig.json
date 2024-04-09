@@ -1,0 +1,11 @@
+{
+    "compilerOptions": {
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "outDir": "./dist",
+    },
+
+    "ts-node": {
+        "files": true
+    }
+}
