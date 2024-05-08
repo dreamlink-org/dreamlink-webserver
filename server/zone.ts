@@ -7,6 +7,7 @@ import { z } from "zod";
 const pageSize = 10
 const fileKeyRandomLength = 32
 const mimeType = "application/zip"
+const dreamCodeHeader = "X-Dream-Code"
 
 export const GetZonesRequestSchema = z.object({
     handle : z.string().min(3).max(20).optional(),
@@ -45,8 +46,19 @@ export const getZones = routeHandler(async (req, res) => {
 })
 
 export const uploadZone = routeHandler(async (req, res) => {
+    const dreamCode = req.headers[dreamCodeHeader] || ""
+    const user = await db.selectFrom("user")
+        .selectAll()
+        .where("dream_code", "=", dreamCode)
+        .executeTakeFirst()
+    
+    if(!user) {
+        res.status(401).json({ error: "Unauthorized" })
+        return
+    }
+
     const name = `${req.params.namespace}/${req.params.name}`
-    if (!name.startsWith(`@${req.user!.handle}/`)) {
+    if (!name.startsWith(`@${user.handle}/`)) {
         res.status(400).json({ error: "Invalid namespace" })
         return
     }
@@ -58,7 +70,7 @@ export const uploadZone = routeHandler(async (req, res) => {
         .values({
             name,
             file_key: fileKey,
-            user_id: req.user!.id,
+            user_id: user.id,
             created_at: new Date(),
             updated_at: new Date()
         }).execute()

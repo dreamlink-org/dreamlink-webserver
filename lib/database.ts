@@ -1,7 +1,7 @@
 import { Pool } from "pg";
-import { databaseURL } from "../config";
+import { databaseURL } from "../env.json";
 import { Kysely, PostgresDialect } from "kysely";
-import { DB } from "../types/database";
+import type { DB } from "kysely-codegen";
 
 const parsedURL = new URL(databaseURL);
 export const pool = new Pool({

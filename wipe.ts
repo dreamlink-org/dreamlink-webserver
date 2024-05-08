@@ -1,4 +1,4 @@
-import { pool } from "../lib/database";
+import { pool } from "./lib/database";
 
 const wipe = async () => {
     const rawConnection = await pool.connect()

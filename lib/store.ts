@@ -1,7 +1,6 @@
 import { promises as fs, createReadStream, createWriteStream } from "fs"
 import { join } from "path"
 import { rootDirectory } from "./root"
-import { storeURI } from "../config"
 import { Readable, Writable } from "stream"
 
 type DataStore = {
@@ -51,14 +50,6 @@ export class LocalStore implements DataStore {
 
 }
 
-const constructStore = () : DataStore => {
-    const parsedURI = new URL(storeURI)
-    if(parsedURI.protocol === "local:") {
-        const localPath = join(rootDirectory, "store")
-        return new LocalStore(localPath)
-    } else {
-        throw new Error("Unsupported store URI")
-    }
-}
+const localPath = join(rootDirectory, "store")
 
-export const store = constructStore()
+export const store = new LocalStore(localPath)

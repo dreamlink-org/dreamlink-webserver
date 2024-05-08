@@ -1,7 +1,2 @@
-.env
-.envrc
-
-.parcel-cache/
-dist/
-store/
 node_modules/
+env.json

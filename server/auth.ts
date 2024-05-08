@@ -2,7 +2,7 @@ import { db } from "../lib/database";
 import { sign, verify } from "jsonwebtoken";
 import { hash, compare } from "bcrypt";
 import { randomBytes } from "crypto";
-import { jwtSecret } from "../config";
+import { jwtSecret } from "../env.json";
 import { z } from "zod";
 import { routeHandler } from "../lib/route";
 
@@ -80,11 +80,6 @@ export const authenticate = routeHandler(async (req, res, next) => {
         .where("id", "=", id)
         .where("min_jwt_iat", "<=", new Date(iat * 1000))
         .executeTakeFirst()
-
-    if(!user) {
-        res.status(401).json({ error: "Invalid token"})
-        return
-    }
 
     req.user = user
     next()

@@ -4,7 +4,7 @@ import { saltRounds, secretLength } from "./auth";
 import { randomBytes } from "crypto";
 import { db } from "../lib/database";
 import { compare, hash } from "bcrypt";
-import { User } from "../types/user";
+import type { User } from "../types/user";
 
 import { passwordRange } from "./auth";
 
@@ -24,25 +24,40 @@ const serializeUser = (user : User) => ({
 })
 
 export const getUser = routeHandler(async (req, res) => {
+    if(!req.user) {
+        res.status(401).json({ error: "Unauthorized" })
+        return
+    }
+
     res.json({
-        user: serializeUser(req.user!)
+        user: serializeUser(req.user)
     })
 })
 
 export const regenerateDreamCode = routeHandler(async (req, res) => {
+    if(!req.user) {
+        res.status(401).json({ error: "Unauthorized" })
+        return
+    }
+
     const newDreamCode = await randomBytes(secretLength).toString("hex")
     await db.updateTable("user")
         .set("dream_code", newDreamCode)
-        .where("id", "=", req.user!.id)
+        .where("id", "=", req.user.id)
         .execute()
 
     res.json({
-        user: { ...req.user!, dream_code: newDreamCode }
+        user: { ...req.user, dream_code: newDreamCode }
     })
 })
 
 export const updatePassword = routeHandler(async (req, res) => {
-    if(!await compare(req.user!.password, req.body.old_password)) {
+    if(!req.user) {
+        res.status(401).json({ error: "Unauthorized" })
+        return
+    }
+
+    if(!await compare(req.user.password, req.body.old_password)) {
         res.status(400).json({ error: "Passwords don't match" })
         return
     }
@@ -50,9 +65,9 @@ export const updatePassword = routeHandler(async (req, res) => {
     const hashedPassword = await hash(req.body.new_password, saltRounds)
     await db.updateTable("user")
         .set("password", hashedPassword)
-        .where("id", "=", req.user!.id)
+        .where("id", "=", req.user.id)
     
     return res.json({
-        user: serializeUser(req.user!)
+        user: serializeUser(req.user)
     })
 })
