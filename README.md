@@ -1,8 +1,10 @@
 # DreamLink Web Server
 
 <div align="center">
-    <img src="splash.png">
+    <img src="logo.png">
 </div>
+
+## Dependencies
 
 This is the source code for the official DreamLink web server. We require the following system dependencies:
 
@@ -24,7 +26,7 @@ Create an environment file (`env.json`) in the root directory containing:
 {
     "databaseURL": "xxx",
     "jwtSecret" : "xxx",
-    "port": xxx
+    "port": 9999
 }
 ```
 
