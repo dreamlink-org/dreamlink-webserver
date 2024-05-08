@@ -8,11 +8,6 @@ import type { User } from "../types/user";
 
 import { passwordRange } from "./auth";
 
-export const UserRequestSchema = z.object({
-    handle: z.string(),
-    dream_code: z.string()
-})
-
 export const UpdatePasswordRequestSchema = z.object({
     old_password: z.string().min(passwordRange.min).max(passwordRange.max),
     new_password: z.string().min(passwordRange.min).max(passwordRange.max)
@@ -57,12 +52,18 @@ export const updatePassword = routeHandler(async (req, res) => {
         return
     }
 
-    if(!await compare(req.user.password, req.body.old_password)) {
+    const parsedBody = UpdatePasswordRequestSchema.safeParse(req.body)
+    if(!parsedBody.success) {
+        res.status(400).json({ error: "Invalid request body" })
+        return
+    }
+
+    if(!await compare(req.user.password, parsedBody.data.old_password)) {
         res.status(400).json({ error: "Passwords don't match" })
         return
     }
 
-    const hashedPassword = await hash(req.body.new_password, saltRounds)
+    const hashedPassword = await hash(parsedBody.data.new_password, saltRounds)
     await db.updateTable("user")
         .set("password", hashedPassword)
         .where("id", "=", req.user.id)

@@ -1,5 +1,5 @@
 import { db } from "../lib/database";
-import { sign, verify } from "jsonwebtoken";
+import { JsonWebTokenError, sign, verify } from "jsonwebtoken";
 import { hash, compare } from "bcrypt";
 import { randomBytes } from "crypto";
 import { jwtSecret } from "../env.json";
@@ -9,11 +9,11 @@ import { routeHandler } from "../lib/route";
 export const secretLength = 32
 export const saltRounds = 10
 export const authHeaderName = "X-DreamLink-Auth"
-export const passwordRange = { min: 8, max: 100 }
+export const passwordRange = { min: 3, max: 100 }
 
 export const AuthRequestSchema = z.object({
-    handle : z.string().min(3).max(20),
-    password: z.string().min(passwordRange.min).max(passwordRange.max)
+    handle : z.string(),
+    password: z.string()
 })
 
 type TokenPayload = {
@@ -22,15 +22,20 @@ type TokenPayload = {
 }
 
 export const signUp = routeHandler(async (req, res) => {
-    const schema = AuthRequestSchema.parse(req.body)
-    const hashedPassword = await hash(schema.password, saltRounds)
+    const schema = AuthRequestSchema.safeParse(req.body)
+    if(!schema.success) {
+        res.status(400).json({ error: "Invalid request body" })
+        return
+    }
+
+    const hashedPassword = await hash(schema.data.password, saltRounds)
     const user = await db.insertInto("user")
         .values({
-            handle: schema.handle,
+            handle: schema.data.handle,
             password: hashedPassword,
             dream_code: await randomBytes(secretLength).toString("hex"),
-            created_at: new Date(),
-            min_jwt_iat: new Date()
+            created_at: new Date().toISOString(),
+            min_jwt_iat: 0
         }).onConflict(
             oc => oc.column("handle")
                 .doNothing()
@@ -46,11 +51,15 @@ export const signUp = routeHandler(async (req, res) => {
 })
 
 export const login = routeHandler(async (req, res) => {
-    const schema = AuthRequestSchema.parse(req.body)
+    const schema = AuthRequestSchema.safeParse(req.body)
+    if(!schema.success) {
+        res.status(400).json({ error: "Invalid request body" })
+        return
+    }
 
     const user = await db.selectFrom("user")
         .select(["id", "password"])
-        .where("handle", "=", schema.handle)
+        .where("handle", "=", schema.data.handle)
         .executeTakeFirst()
 
     if(!user) {
@@ -58,7 +67,7 @@ export const login = routeHandler(async (req, res) => {
         return
     }
 
-    if(!await compare(schema.password, user.password)) {
+    if(!await compare(schema.data.password, user.password)) {
         res.status(401).json({ error: "Incorrect password" })
         return
     }
@@ -71,14 +80,43 @@ export const login = routeHandler(async (req, res) => {
     })
 })
 
+export const logout = routeHandler(async (req, res) => {
+    if(!req.user) {
+        res.status(401).json({ error: "Unauthorized" })
+        return
+    }
+
+    await db.updateTable("user")
+        .set("min_jwt_iat", Math.floor(Date.now() / 1000))
+        .where("id", "=", req.user.id)
+    
+    res.json({ })
+})
+
 export const authenticate = routeHandler(async (req, res, next) => {
-    const token = req.header(authHeaderName) || ""
-    const { iat, id } = verify(token, jwtSecret) as TokenPayload
+    const token = req.header(authHeaderName) || null
+    if(token === null) {
+        next()
+        return
+    }
+
+    let iat, id : number
+    try {
+        const result = verify(token, jwtSecret) as TokenPayload
+        iat = result.iat
+        id = result.id
+    } catch(err) {
+        if(err instanceof JsonWebTokenError) {
+            next()
+            return
+        }
+        throw err
+    }
 
     const user = await db.selectFrom("user")
         .selectAll()
         .where("id", "=", id)
-        .where("min_jwt_iat", "<=", new Date(iat * 1000))
+        .where("min_jwt_iat", "<=", iat)
         .executeTakeFirst()
 
     req.user = user

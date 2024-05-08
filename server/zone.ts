@@ -7,7 +7,7 @@ import { z } from "zod";
 const pageSize = 10
 const fileKeyRandomLength = 32
 const mimeType = "application/zip"
-const dreamCodeHeader = "X-Dream-Code"
+const dreamCodeHeader = "X-Dream-Code".toLowerCase()
 
 export const GetZonesRequestSchema = z.object({
     handle : z.string().min(3).max(20).optional(),

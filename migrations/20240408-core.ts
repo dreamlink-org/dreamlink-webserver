@@ -7,7 +7,7 @@ export async function up(db: Kysely<any>): Promise<void> {
         .addColumn("handle", "text", (c) => c.notNull())
         .addColumn("password", "text", (c) => c.notNull())
         .addColumn("dream_code", "text", (c) => c.notNull())
-        .addColumn("min_jwt_iat", "timestamp", (c) => c.notNull())
+        .addColumn("min_jwt_iat", "integer", (c) => c.notNull())
         .addColumn("created_at", "timestamp", (c) => c.notNull())
         .execute()
 

@@ -1,6 +1,6 @@
 import express, { json } from "express"
 import cors from "cors"
-import { authenticate, login, signUp } from "./auth"
+import { authenticate, login, logout, signUp } from "./auth"
 import { downloadZone, getZones, uploadZone } from "./zone"
 import { getUser, regenerateDreamCode, updatePassword } from "./user"
 
@@ -10,6 +10,7 @@ export const app = express()
     .use(json())
     .post("/sign-up", signUp)
     .post("/login", login)
+    .post("/logout", logout)
     .get("/zones", getZones)
     .get("/zone/:namespace/:name/download", downloadZone)
     .get("/user", getUser)
