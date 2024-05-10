@@ -6,16 +6,14 @@ import { db } from "../lib/database";
 import { compare, hash } from "bcrypt";
 import type { User } from "../types/user";
 
-import { passwordRange } from "./auth";
-
 export const UpdatePasswordRequestSchema = z.object({
-    old_password: z.string().min(passwordRange.min).max(passwordRange.max),
-    new_password: z.string().min(passwordRange.min).max(passwordRange.max)
+    oldPassword: z.string(),
+    newPassword: z.string()
 })
 
 const serializeUser = (user : User) => ({
     handle: user.handle,
-    dream_code: user.dream_code
+    dreamCode: user.dream_code
 })
 
 export const getUser = routeHandler(async (req, res) => {
@@ -58,15 +56,16 @@ export const updatePassword = routeHandler(async (req, res) => {
         return
     }
 
-    if(!await compare(req.user.password, parsedBody.data.old_password)) {
-        res.status(400).json({ error: "Passwords don't match" })
+    if(!await compare(parsedBody.data.oldPassword, req.user.password)) {
+        res.status(400).json({ error: "Incorrect Password" })
         return
     }
 
-    const hashedPassword = await hash(parsedBody.data.new_password, saltRounds)
+    const hashedPassword = await hash(parsedBody.data.newPassword, saltRounds)
     await db.updateTable("user")
         .set("password", hashedPassword)
         .where("id", "=", req.user.id)
+        .execute()
     
     return res.json({
         user: serializeUser(req.user)

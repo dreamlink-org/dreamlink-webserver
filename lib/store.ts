@@ -51,5 +51,4 @@ export class LocalStore implements DataStore {
 }
 
 const localPath = join(rootDirectory, "store")
-
 export const store = new LocalStore(localPath)

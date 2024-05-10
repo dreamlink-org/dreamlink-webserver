@@ -8,8 +8,7 @@ import { routeHandler } from "../lib/route";
 
 export const secretLength = 32
 export const saltRounds = 10
-export const authHeaderName = "X-DreamLink-Auth"
-export const passwordRange = { min: 3, max: 100 }
+export const authHeaderName = "X-Auth"
 
 export const AuthRequestSchema = z.object({
     handle : z.string(),
@@ -47,7 +46,7 @@ export const signUp = routeHandler(async (req, res) => {
     }
 
     const payload : TokenPayload = { iat: Math.floor(Date.now() / 1000), id: user.id }
-    return res.json({ token: sign(payload, jwtSecret) })
+    return res.json({ authToken: sign(payload, jwtSecret) })
 })
 
 export const login = routeHandler(async (req, res) => {
@@ -73,7 +72,7 @@ export const login = routeHandler(async (req, res) => {
     }
 
     res.json({
-        token: sign({
+        authToken: sign({
             iat: Math.floor(Date.now() / 1000),
             id: user.id
         }, jwtSecret),
@@ -89,6 +88,7 @@ export const logout = routeHandler(async (req, res) => {
     await db.updateTable("user")
         .set("min_jwt_iat", Math.floor(Date.now() / 1000))
         .where("id", "=", req.user.id)
+        .execute()
     
     res.json({ })
 })

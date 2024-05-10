@@ -10,34 +10,38 @@ const mimeType = "application/zip"
 const dreamCodeHeader = "X-Dream-Code".toLowerCase()
 
 export const GetZonesRequestSchema = z.object({
-    handle : z.string().min(3).max(20).optional(),
-    page: z.number().int().positive().optional(),
+    handle : z.string().optional(),
+    page: z.coerce.number().int().min(0).optional(),
+    maxResults: z.coerce.number().int().min(1).max(20).optional()
 })
 
 export const getZones = routeHandler(async (req, res) => {
     const schema = GetZonesRequestSchema.parse(req.query)
     const page = schema.page || 0
+    const maxResults = schema.maxResults || pageSize
 
-    let partialQuery = db.selectFrom(["zone", "user"])
+    let partialQuery = db.selectFrom(["zone"])
         .selectAll("zone")
-        .select(["user.handle as user_handle"])
         .innerJoin("user", "user.id", "zone.user_id")
-        .limit(pageSize + 1)
-        .offset(page * pageSize)
+        .select(["user.handle as user_handle"])
+        .orderBy("zone.created_at", "desc")
+        .limit(maxResults + 1)
+        .offset(page * maxResults)
 
     if(schema.handle) {
         partialQuery = partialQuery.where("user.handle", "=", schema.handle)
     }
 
     const zones = await partialQuery.execute()
-    const hasMore = zones.length > pageSize
+    const hasMore = zones.length > maxResults
 
     res.json({
         hasMore,
-        zones: zones.slice(0, pageSize).map((z) => ({
+        zones: zones.slice(0, maxResults).map((z) => ({
             id: z.id,
             name: z.name,
             user: {
+                id: z.user_id,
                 handle: z.user_handle
             }
         }))
