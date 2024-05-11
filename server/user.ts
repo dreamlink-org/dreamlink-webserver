@@ -40,7 +40,7 @@ export const regenerateDreamCode = routeHandler(async (req, res) => {
         .execute()
 
     res.json({
-        user: { ...req.user, dream_code: newDreamCode }
+        user: serializeUser({ ...req.user, dream_code: newDreamCode })
     })
 })
 
